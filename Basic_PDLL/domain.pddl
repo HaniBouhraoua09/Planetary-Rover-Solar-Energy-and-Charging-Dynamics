@@ -4,6 +4,7 @@
 ;; Q1 / Classical PDDL with numeric fluents
 ;; ============================================================
 
+
 (define (domain rover-energy)
 
   (:requirements :strips :typing :numeric-fluents)
