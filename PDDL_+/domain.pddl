@@ -6,7 +6,7 @@
 
 (define (domain rover-energy-plus)
 
-  (:requirements :strips :typing :numeric-fluents :time)
+  (:requirements :strips :typing :numeric-fluents :negative-preconditions :time)
 
   (:types
     rover location
