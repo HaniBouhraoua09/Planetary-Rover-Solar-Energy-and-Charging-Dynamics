@@ -1,0 +1,75 @@
+;; ============================================================
+;; Domain: rover-energy-plus
+;; Assignment D1-V7 -- Q2 / PDDL+ with continuous charging
+;; ============================================================
+
+(define (domain rover-energy-plus)
+
+  (:requirements :strips :typing :numeric-fluents :time)
+
+  (:types
+    rover location
+  )
+
+  (:predicates
+    (at ?r - rover ?l - location)
+    (connected ?l1 - location ?l2 - location)
+    (solar-zone ?l - location)
+    (visited ?l - location)
+    (daytime)            ;; NEW: true while the sun is up
+  )
+
+  (:functions
+    (battery-level ?r - rover)
+    (max-battery   ?r - rover)
+    (move-cost     ?l1 - location ?l2 - location)
+    (charge-rate   ?l - location)
+    (time-of-day)        ;; NEW: continuous clock
+  )
+
+  ;; ----------------------------------------------------------
+  ;; ACTION: move  (unchanged from Q1)
+  ;; ----------------------------------------------------------
+  (:action move
+    :parameters (?r - rover ?from - location ?to - location)
+    :precondition (and
+      (at ?r ?from)
+      (connected ?from ?to)
+      (>= (battery-level ?r) (move-cost ?from ?to))
+    )
+    :effect (and
+      (not (at ?r ?from))
+      (at ?r ?to)
+      (visited ?to)
+      (decrease (battery-level ?r) (move-cost ?from ?to))
+    )
+  )
+
+  ;; ----------------------------------------------------------
+  ;; PROCESS: time-flow
+  ;; Advances the clock continuously.
+  ;; ----------------------------------------------------------
+  (:process time-flow
+    :parameters ()
+    :precondition (>= (time-of-day) 0)
+    :effect (increase (time-of-day) (* #t 1))
+  )
+
+  ;; ----------------------------------------------------------
+  ;; PROCESS: charging
+  ;; Replaces Q1's recharge action.
+  ;; Active when: rover is at a solar zone AND it's daytime AND battery is not full.
+  ;; Continuously raises battery at the per-location rate.
+  ;; ----------------------------------------------------------
+  (:process charging
+    :parameters (?r - rover ?l - location)
+    :precondition (and
+      (at ?r ?l)
+      (solar-zone ?l)
+      (daytime)
+      (< (battery-level ?r) (max-battery ?r))
+    )
+    :effect (increase (battery-level ?r) (* #t (charge-rate ?l)))
+  )
+
+)
