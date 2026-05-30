@@ -62,34 +62,34 @@
   (:process charging
     :parameters (?r - rover ?l - location)
     :precondition (and
-      (at ?r ?l)
-      (solar-zone ?l)
-      (daytime)
-      (< (battery-level ?r) (max-battery ?r))
+      (at ?r ?l)                              ; rover must BE at location ?l
+      (solar-zone ?l)                         ; ?l must be a sun zone
+      (daytime)                               ; sun must be up
+      (< (battery-level ?r) (max-battery ?r)) ; battery must not be full
     )
     :effect (increase (battery-level ?r) (* #t (charge-rate ?l)))
   )
 
   ;; ----------------------------------------------------------
-  ;; EVENT: nightfall  -- the sun goes down at t = 50
+  ;; EVENT: nightfall  -- the sun goes down at t = 100
   ;; ----------------------------------------------------------
   (:event nightfall
     :parameters ()
     :precondition (and
-      (>= (time-of-day) 50)
+      (>= (time-of-day) 100)
       (daytime)
     )
     :effect (not (daytime))
   )
 
   ;; ----------------------------------------------------------
-  ;; EVENT: sunrise  -- the sun comes up at t = 100
+  ;; EVENT: sunrise  -- the sun comes up at t = 200
   ;; (optional, for completeness if mission spans > 1 day)
   ;; ----------------------------------------------------------
   (:event sunrise
     :parameters ()
     :precondition (and
-      (>= (time-of-day) 100)
+      (>= (time-of-day) 200)
       (not (daytime))
     )
     :effect (daytime)
