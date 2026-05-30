@@ -1,6 +1,7 @@
 ;; ============================================================
 ;; Domain: rover-energy-plus
 ;; Assignment D1-V7 -- Q2 / PDDL+ with continuous charging
+;;                     and day/night events
 ;; ============================================================
 
 (define (domain rover-energy-plus)
@@ -16,7 +17,7 @@
     (connected ?l1 - location ?l2 - location)
     (solar-zone ?l - location)
     (visited ?l - location)
-    (daytime)            ;; NEW: true while the sun is up
+    (daytime)                 ; global: sun is up
   )
 
   (:functions
@@ -24,7 +25,7 @@
     (max-battery   ?r - rover)
     (move-cost     ?l1 - location ?l2 - location)
     (charge-rate   ?l - location)
-    (time-of-day)        ;; NEW: continuous clock
+    (time-of-day)             ; continuous clock
   )
 
   ;; ----------------------------------------------------------
@@ -46,8 +47,7 @@
   )
 
   ;; ----------------------------------------------------------
-  ;; PROCESS: time-flow
-  ;; Advances the clock continuously.
+  ;; PROCESS: time-flow  -- the clock ticks forward
   ;; ----------------------------------------------------------
   (:process time-flow
     :parameters ()
@@ -56,10 +56,8 @@
   )
 
   ;; ----------------------------------------------------------
-  ;; PROCESS: charging
-  ;; Replaces Q1's recharge action.
-  ;; Active when: rover is at a solar zone AND it's daytime AND battery is not full.
-  ;; Continuously raises battery at the per-location rate.
+  ;; PROCESS: charging  -- replaces Q1's recharge action
+  ;; Active only when: at a sun zone AND daytime AND battery not full
   ;; ----------------------------------------------------------
   (:process charging
     :parameters (?r - rover ?l - location)
@@ -70,6 +68,31 @@
       (< (battery-level ?r) (max-battery ?r))
     )
     :effect (increase (battery-level ?r) (* #t (charge-rate ?l)))
+  )
+
+  ;; ----------------------------------------------------------
+  ;; EVENT: nightfall  -- the sun goes down at t = 50
+  ;; ----------------------------------------------------------
+  (:event nightfall
+    :parameters ()
+    :precondition (and
+      (>= (time-of-day) 50)
+      (daytime)
+    )
+    :effect (not (daytime))
+  )
+
+  ;; ----------------------------------------------------------
+  ;; EVENT: sunrise  -- the sun comes up at t = 100
+  ;; (optional, for completeness if mission spans > 1 day)
+  ;; ----------------------------------------------------------
+  (:event sunrise
+    :parameters ()
+    :precondition (and
+      (>= (time-of-day) 100)
+      (not (daytime))
+    )
+    :effect (daytime)
   )
 
 )
