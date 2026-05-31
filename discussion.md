@@ -164,7 +164,7 @@ tolerant of small disturbances. **Contingent planning** goes further:
 pre-compute branches for different outcomes (e.g. *"if battery < 15
 after this move, detour to the nearest solar zone"*).
 
-### 2.4. Why we did not use any of these
+### 2.4. Why we did not use any of MDP, POMDP, or robust planning
 
 Three reasons:
 
