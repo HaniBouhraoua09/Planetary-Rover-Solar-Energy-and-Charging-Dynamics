@@ -32,7 +32,7 @@ explore enough to visit every location, but never run out of battery.
 |------|-------------|--------|
 | **Q1** | Classical PDDL with numeric fluents (recharge as an *action*) | ✅ Done |
 | **Q2** | PDDL+ model (continuous charging *process* + night-time *event*) | ✅ Done |
-| **Discussion** | Discrete vs continuous energy modelling; planning under uncertainty | ⏳ Planned |
+| **Discussion** | Discrete vs continuous energy modelling; planning under uncertainty | ✅ Done |
 
 ---
 
@@ -40,7 +40,8 @@ explore enough to visit every location, but never run out of battery.
 
 ```
 .
-├── README.md
+├── README.md                         # this file
+├── discussion.md                     # discrete vs continuous, planning under uncertainty
 ├── Basic_PDDL/                       # Q1 — classical PDDL
 │   ├── domain.pddl
 │   ├── problem-A.pddl                # recharge OPTIONAL  (generous battery)
@@ -392,14 +393,17 @@ java -jar <path>\ENHSP-Public\enhsp.jar -o domain.pddl -f problem-Q2-fastzone-on
 
 ---
 
-## Next steps
+## Discussion
 
-- [ ] **Discussion section**: discrete vs continuous energy modelling;
-      planning under energy uncertainty (belief space / POMDP) —
-      see *Part 3, pp. 37–38, 83–85* of the course materials.
+See [`discussion.md`](./discussion.md) for a full discussion covering:
 
----
+- **Discrete vs continuous energy modelling** — comparing the Q1 action
+  with the Q2 process, agency (planner-driven vs world-driven), and the
+  satisficing-optimality property illustrated by `tight` vs
+  `fastzone-only`.
+- **Planning under energy uncertainty** — MDP and POMDP frameworks,
+  robust and contingent planning, and how PDDL+ fits inside a
+  Sense–Plan–Act loop for real robotic deployment.
+- **Other limitations** — instantaneous moves, edge traversability
+  (task–motion gap), and the single-agent assumption.
 
-## License
-
-Coursework — for educational use.
