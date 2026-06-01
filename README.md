@@ -33,6 +33,7 @@ explore enough to visit every location, but never run out of battery.
 | **Q1** | Classical PDDL with numeric fluents (recharge as an *action*) | ✅ Done |
 | **Q2** | PDDL+ model (continuous charging *process* + night-time *event*) | ✅ Done |
 | **Discussion** | Discrete vs continuous energy modelling; planning under uncertainty | ✅ Done |
+| **Bonus** | Durative movement (travel takes time, modelled with a process + event) | ✅ Done |
 
 ---
 
@@ -40,18 +41,24 @@ explore enough to visit every location, but never run out of battery.
 
 ```
 .
-├── README.md                         # this file
-├── discussion.md                     # discrete vs continuous, planning under uncertainty
-├── Basic_PDDL/                       # Q1 — classical PDDL
+├── README.md                              # this file
+├── discussion.md                          # discrete vs continuous, planning under uncertainty
+├── Basic_PDDL/                            # Q1 — classical PDDL
 │   ├── domain.pddl
-│   ├── problem-A.pddl                # recharge OPTIONAL  (generous battery)
-│   └── problem-B.pddl                # recharge NECESSARY (tight battery)
-└── PDDL_+/                           # Q2 — PDDL+ with processes & events
+│   ├── problem-A.pddl                     # recharge OPTIONAL  (generous battery)
+│   └── problem-B.pddl                     # recharge NECESSARY (tight battery)
+├── PDDL_+/                                # Q2 — PDDL+ with processes & events
+│   ├── domain.pddl
+│   ├── problem-Q2-easy.pddl               # plenty of battery + plenty of day
+│   ├── problem-Q2-tight.pddl              # low battery, plenty of day
+│   ├── problem-Q2-infeasible.pddl         # nightfall blocks the goal
+│   └── problem-Q2-fastzone-only.pddl      # tight deadline forces fast-zone charging
+└── Optional_Durative_Movement/            # BONUS — travel takes time
     ├── domain.pddl
-    ├── problem-Q2-easy.pddl          # plenty of battery + plenty of day
-    ├── problem-Q2-tight.pddl         # low battery, plenty of day
-    ├── problem-Q2-infeasible.pddl    # nightfall blocks the goal
-    └── problem-Q2-fastzone-only.pddl # tight deadline forces fast-zone charging
+    ├── problem-dur-easy.pddl
+    ├── problem-dur-tight.pddl
+    ├── problem-dur-fastzone.pddl
+    └── problem-dur-infeasible.pddl
 ```
 
 One domain per question, multiple problem files per question — the classic
@@ -108,7 +115,7 @@ constrain the plan**: the rover cannot traverse an edge it cannot afford.
 
 ## The map
 
-A 4-node **directional** graph (used in both Q1 and Q2):
+A 4-node **directional** graph (used in all parts):
 
 ```
         A ──────► B
@@ -179,7 +186,7 @@ inserts a recharge because the goal is reachable without it.
 
 Three moves **plus one recharge**. Battery: 25 → 15 → 5 → (recharge) 30 → 20.
 Without the recharge step the rover would be stranded at C with 5 units,
-unable to afford the final 10-cost move to D.
+unable to afford the 10-cost C→D move.
 
 > An equally valid 4-action plan recharges at **B** instead of C. With ties,
 > the planner picks one according to its heuristic; both are correct.
@@ -259,8 +266,7 @@ Elapsed Time: 0.0
 ```
 
 Three instantaneous moves, no waiting. Battery: 60 → 50 → 40 → 30.
-Charging process is *available* but the planner doesn't invoke it
-(time gaps would only waste plan time).
+Charging process is *available* but the planner doesn't invoke it.
 
 ### `problem-Q2-tight.pddl` — process forced, suboptimal plan
 
@@ -274,14 +280,10 @@ Elapsed Time: 47.0
 ```
 
 The planner splits charging across **both** solar zones — gaining 9 battery
-at the slow zone B (45 × 0.2) and 1 battery at the fast zone C (2 × 0.5),
-for a total of +10 (exactly the deficit). The plan is *valid* but not
-*time-optimal*: a smarter plan would skip B and charge for 20 ticks at C
-(total 20 ticks elapsed instead of 47). This illustrates a general
-property of satisficing PDDL+ search: the `hadd` heuristic counts
-remaining actions, not remaining time, so it cannot distinguish "short
-wait" from "long wait." Optimality is not guaranteed without an explicit
-`(:metric)` directive.
+at B (45 × 0.2) and 1 at C (2 × 0.5), exactly the 10 needed. The plan is
+*valid* but not *time-optimal*: a smarter plan would skip B and charge for
+20 ticks at C. The `hadd` heuristic counts remaining actions, not remaining
+time, so it cannot distinguish "short wait" from "long wait."
 
 ### `problem-Q2-infeasible.pddl` — nightfall blocks the goal
 
@@ -292,9 +294,9 @@ Number of Dead-Ends detected: 151
 ```
 
 With `time-of-day = 85`, only 15 ticks of daylight remain. The minimum
-charging time at C (10 battery ÷ 0.5 rate = 20 ticks) does not fit within
-the daylight window before the `nightfall` event fires. The planner
-correctly searches 815 states and declares the problem unsolvable.
+charging time at C (10 ÷ 0.5 = 20 ticks) does not fit before the
+`nightfall` event fires. The planner searches 815 states and declares the
+problem unsolvable.
 
 ### `problem-Q2-fastzone-only.pddl` — constraint forces optimality
 
@@ -307,15 +309,13 @@ Elapsed Time: 20.0
 ```
 
 With only 21 ticks of daylight remaining (`time-of-day = 79`), the slow
-"charge at B first" strategy from the `tight` problem is no longer
-time-affordable. The planner is *forced* into the optimal strategy: rush
-to C, charge for exactly 20 ticks, finish the goal at t=99 (one tick
-before nightfall). **A constraint made the planner produce the
-time-optimal plan that the unconstrained `tight` problem failed to find.**
+"charge at B first" strategy is no longer time-affordable. The planner is
+*forced* into the optimal strategy: rush to C, charge for exactly 20 ticks,
+finish at t=99 (one tick before nightfall). **A constraint made the planner
+produce the time-optimal plan that the unconstrained `tight` problem failed
+to find.**
 
 ## Q2 — the timing-feasibility spectrum
-
-A clean gradient demonstrates how `time-of-day` controls feasibility:
 
 | Initial `time-of-day` | Daylight left | Outcome | Lesson |
 |-----------------------|----------------|---------|--------|
@@ -323,6 +323,111 @@ A clean gradient demonstrates how `time-of-day` controls feasibility:
 | 79                    | 21            | 20-tick optimal plan ✅ | Constraint forces the fast strategy |
 | 80                    | 20            | Unsolvable (boundary)   | Plan would end exactly at t=100, violating `< 100` |
 | 85                    | 15            | Unsolvable ❌            | Even fast charging cannot fit |
+
+---
+
+# Bonus — Durative Movement (`Optional_Durative_Movement/`)
+
+## Motivation
+
+In Q1 and Q2, `move` is **instantaneous** — the rover crosses an edge in
+zero time, and time only advances while it waits to charge. This bonus
+makes **travel itself take time** (a fixed 5 ticks per move), so the
+daylight budget is consumed by *moving* as well as *charging*.
+
+## Why not `:durative-action`?
+
+ENHSP is a numeric / PDDL+ planner built around **processes and events**;
+it does not support PDDL 2.1 `:durative-action` syntax. So travel time is
+modelled the **PDDL+ way**, with three coordinated constructs:
+
+| Construct | Type | Role |
+|-----------|------|------|
+| `start-move`  | `:action`  | Rover commits: leaves origin, spends battery, sets `travel-timer = 5`, marks `traveling` and `dest` |
+| `travel`      | `:process` | Counts `travel-timer` down continuously while in transit |
+| `arrive`      | `:event`   | When the timer reaches 0: rover lands at `dest`, marks it `visited`, clears `traveling` |
+
+**Charging during travel is naturally blocked**: while `(traveling ?r)` is
+true, `(at ?r ?l)` is false for every `?l`, so the `charging` process
+cannot run. This matches the convention that the rover only charges while
+stationary at a solar zone.
+
+## The four bonus problems
+
+| File | Initial battery | `time-of-day` | Expected |
+|------|-----------------|----------------|----------|
+| `problem-dur-easy.pddl`       | 60 | 0  | Feasible — 3 moves, finishes ~t=15, no charging |
+| `problem-dur-tight.pddl`      | 20 | 0  | Feasible — travel + charging, finishes ~t=65 |
+| `problem-dur-fastzone.pddl`   | 20 | 64 | Feasible — only the fast zone fits in the remaining daylight |
+| `problem-dur-infeasible.pddl` | 20 | 75 | Unsolvable — 25 ticks daylight < 35 needed |
+
+## Expected bonus results
+
+### `problem-dur-easy.pddl`
+
+```
+0:    (start-move rover1 locA locB)
+0:    -----waiting---- [5.0]       # travel
+5.0:  (start-move rover1 locB locC)
+5.0:  -----waiting---- [10.0]      # travel
+10.0: (start-move rover1 locC locD)
+10.0: -----waiting---- [15.0]      # travel
+```
+
+3 moves × 5-tick travel → arrives at D at t=15. No charging.
+
+### `problem-dur-tight.pddl`
+
+```
+0:    (start-move rover1 locA locB)
+0:    -----waiting---- [55.0]      # travel (5) + charging at B (50)
+55.0: (start-move rover1 locB locC)
+55.0: -----waiting---- [60.0]      # travel
+60.0: (start-move rover1 locC locD)
+60.0: -----waiting---- [65.0]      # travel
+```
+
+Feasible, finishes at t=65. The planner again charges at the slow zone B
+(satisficing, not time-optimal — same behaviour as the Q2 `tight` case).
+
+### `problem-dur-fastzone.pddl`
+
+```
+0:    (start-move rover1 locA locB)
+0:    -----waiting---- [5.0]       # travel
+5.0:  (start-move rover1 locB locC)
+5.0:  -----waiting---- [30.0]      # travel (5) + charging at C (20)
+30.0: (start-move rover1 locC locD)
+30.0: -----waiting---- [35.0]      # travel
+```
+
+With only 36 ticks of daylight (`time-of-day = 64`), the slow-zone strategy
+no longer fits, so the planner is forced to charge at the fast zone C.
+Finishes at t = 64 + 35 = 99 < 100.
+
+### `problem-dur-infeasible.pddl`
+
+```
+Problem unsolvable
+```
+
+Started at `time-of-day = 75` → only 25 ticks of daylight. Minimum plan =
+15 (travel) + 20 (charging) = 35 ticks > 25. Nightfall stops charging
+before enough energy is recovered.
+
+## Instantaneous vs durative — the comparison
+
+| Case | Instantaneous (Q2) | Durative (bonus) | Why it shifts |
+|------|--------------------|--------------------|----------------|
+| easy        | finishes t=0     | finishes **t=15**  | travel now costs 3 × 5 ticks |
+| tight       | 47 ticks         | **65 ticks**       | +15 travel on top of slow charge |
+| fastzone    | boundary t=79    | boundary **t=64**  | travel eats daylight earlier |
+| infeasible  | fails at t=85    | fails at **t=75**  | deadline bites sooner |
+
+**The takeaway:** adding travel time shifts every feasibility boundary
+*earlier* — the rover has less daylight to spare because moving itself
+consumes the day. The lesson is unchanged (timing drives feasibility); the
+numbers simply tighten.
 
 ---
 
@@ -341,28 +446,27 @@ javac -encoding utf8 -d out -classpath "libs/*" (Get-ChildItem -Recurse src/plan
 jar --create --file enhsp.jar --manifest manifest.mf -C out/ .
 ```
 
-Verify:
+### Running each part
 
 ```powershell
-java -jar enhsp.jar -planner sat-hadd
-```
-
-### Running Q1
-
-```powershell
+# Q1
 cd Basic_PDDL
 java -jar <path>\ENHSP-Public\enhsp.jar -o domain.pddl -f problem-A.pddl -planner sat-hadd
 java -jar <path>\ENHSP-Public\enhsp.jar -o domain.pddl -f problem-B.pddl -planner sat-hadd
-```
 
-### Running Q2
-
-```powershell
-cd PDDL_+
+# Q2
+cd ..\PDDL_+
 java -jar <path>\ENHSP-Public\enhsp.jar -o domain.pddl -f problem-Q2-easy.pddl          -planner sat-hadd
 java -jar <path>\ENHSP-Public\enhsp.jar -o domain.pddl -f problem-Q2-tight.pddl         -planner sat-hadd
 java -jar <path>\ENHSP-Public\enhsp.jar -o domain.pddl -f problem-Q2-infeasible.pddl    -planner sat-hadd -timeout 60
 java -jar <path>\ENHSP-Public\enhsp.jar -o domain.pddl -f problem-Q2-fastzone-only.pddl -planner sat-hadd
+
+# Bonus
+cd ..\Optional_Durative_Movement
+java -jar <path>\ENHSP-Public\enhsp.jar -o domain.pddl -f problem-dur-easy.pddl       -planner sat-hadd
+java -jar <path>\ENHSP-Public\enhsp.jar -o domain.pddl -f problem-dur-tight.pddl      -planner sat-hadd
+java -jar <path>\ENHSP-Public\enhsp.jar -o domain.pddl -f problem-dur-fastzone.pddl   -planner sat-hadd
+java -jar <path>\ENHSP-Public\enhsp.jar -o domain.pddl -f problem-dur-infeasible.pddl -planner sat-hadd -timeout 60
 ```
 
 ---
@@ -377,19 +481,17 @@ java -jar <path>\ENHSP-Public\enhsp.jar -o domain.pddl -f problem-Q2-fastzone-on
   guideline *"avoid modelling recharge as instantaneous unless justified."*
 - **Charge-rate rescaling between Q1 and Q2.** Q1 rates (15, 25) are
   per-action jumps; Q2 rates (0.2, 0.5) are per-tick continuous gains.
-  The two are not directly comparable.
+- **Travel duration via process + event.** The bonus models a 5-tick move
+  using a timer process and an arrival event, because ENHSP does not
+  support `:durative-action`.
 - **No reactive battery threshold.** The model does **not** hard-code a
   rule like *"recharge if battery < 60."* The planner derives *when* to
-  recharge from the energy preconditions — deliberative planning, not
-  scripted reactive control.
+  recharge from the energy preconditions — deliberative, not scripted.
 - **Obstacles / terrain are out of scope.** Edges are assumed traversable;
-  modelling real geometry would require task-motion planning to close the
-  symbolic-geometric gap.
+  modelling real geometry would require task-motion planning.
 - **Satisficing vs optimal planning.** `sat-hadd` finds valid plans
   quickly but does not guarantee minimum time. The `tight` vs
-  `fastzone-only` comparison in Q2 makes this concrete: the same map and
-  battery can yield a 47-tick plan or a 20-tick plan depending on what
-  the time constraint forces.
+  `fastzone-only` comparison makes this concrete.
 
 ---
 
@@ -397,13 +499,16 @@ java -jar <path>\ENHSP-Public\enhsp.jar -o domain.pddl -f problem-Q2-fastzone-on
 
 See [`discussion.md`](./discussion.md) for a full discussion covering:
 
-- **Discrete vs continuous energy modelling** — comparing the Q1 action
-  with the Q2 process, agency (planner-driven vs world-driven), and the
-  satisficing-optimality property illustrated by `tight` vs
-  `fastzone-only`.
-- **Planning under energy uncertainty** — MDP and POMDP frameworks,
-  robust and contingent planning, and how PDDL+ fits inside a
-  Sense–Plan–Act loop for real robotic deployment.
-- **Other limitations** — instantaneous moves, edge traversability
-  (task–motion gap), and the single-agent assumption.
+- **Discrete vs continuous energy modelling** — the Q1 action vs the Q2
+  process, agency (planner- vs world-driven), and the satisficing-vs-optimal
+  property illustrated by `tight` vs `fastzone-only`.
+- **Planning under energy uncertainty** — MDP and POMDP frameworks, robust
+  and contingent planning, and how PDDL+ fits inside a Sense–Plan–Act loop.
+- **Durative movement** — how adding travel time tightens every feasibility
+  boundary without changing the underlying lesson.
 
+---
+
+## License
+
+Coursework — for educational use.
