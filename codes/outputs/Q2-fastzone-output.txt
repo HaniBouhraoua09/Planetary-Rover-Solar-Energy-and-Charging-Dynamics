@@ -1,0 +1,41 @@
+Domain parsed
+Problem parsed
+Grounding..
+Grounding Time: 67
+Aibr Preprocessing
+|F|:8
+|X|:2
+Heuristic Problem Creation
+Aibr Preprocessing
+|A|:5
+|P|:3
+|E|:2
+Delta time heuristic model:1.0
+Delta time planning model:1.0
+Delta time search-execution model:1.0
+Delta time validation model:1
+H1 Setup Time (msec): 25
+ g(n)= 1.0 h(n)=3.0
+ g(n)= 22.0 h(n)=2.8
+ g(n)= 22.0 h(n)=2.2
+ g(n)= 22.0 h(n)=1.6
+ g(n)= 22.0 h(n)=1.0
+Extracting plan with execution delta: 1.0
+Problem Solved
+
+Found Plan:
+0: (move rover1 locA locB)
+0: (move rover1 locB locC)
+0: -----waiting---- [20.0]
+20.0: (move rover1 locC locD)
+
+Plan-Length:23
+Elapsed Time: 20.0
+Metric (Search):23.0
+Planning Time (msec): 465
+Heuristic Time (msec): 158
+Search Time (msec): 450
+Expanded Nodes:1814
+States Evaluated:1834
+Number of Dead-Ends detected:254
+Number of Duplicates detected:0
