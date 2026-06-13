@@ -1,7 +1,7 @@
-> **FILES TO CHECK (final / correct):**
-> **PDDL (Q1)** → `codes/Basic_PDDL/domain.pddl` with `problem-A.pddl` (recharge optional) and `problem-B.pddl` (recharge necessary).
-> **PDDL+ (Q2)** → `codes/PDDL_+/domain.pddl` with `problem-Q2-easy.pddl`, `problem-Q2-tight.pddl`, `problem-Q2-fastzone-only.pddl`, `problem-Q2-infeasible.pddl`.
-> `codes/Optional_Durative_Movement/` is a **bonus** (travel takes time). Planner outputs are in `codes/outputs/`.
+> **FILES TO CHECK (final / correct):** <br>
+> **PDDL (Q1)** → `codes/Basic_PDDL/domain.pddl` with `problem-optional.pddl` (recharge optional) and `problem-necessary.pddl` (recharge necessary).<br>
+> **PDDL+ (Q2)** → `codes/PDDL_+/domain.pddl` with `problem-Q2-easy.pddl`, `problem-Q2-tight.pddl`, `problem-Q2-fastzone-only.pddl`, `problem-Q2-infeasible.pddl`. <br>
+> **Optional_Durative_Movement_PDDL_+/** → `codes/Optional_Durative_Movement+/domain.pddl` is a **bonus** (travel takes time). 
 
 Author : Hani Bouhraoua &nbsp;|&nbsp; ID : 8314923
 
