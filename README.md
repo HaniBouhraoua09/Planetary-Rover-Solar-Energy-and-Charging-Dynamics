@@ -1,7 +1,7 @@
 > **FILES TO CHECK (final / correct):** <br>
 > **PDDL (Q1)** → `codes/Basic_PDDL/domain.pddl` with `problem-optional.pddl` (recharge optional) and `problem-necessary.pddl` (recharge necessary).<br>
-> **PDDL+ (Q2)** → `codes/PDDL_+/domain.pddl` with `problem-Q2-easy.pddl`, `problem-Q2-tight.pddl`, `problem-Q2-fastzone-only.pddl`, `problem-Q2-infeasible.pddl`. <br>
-> **Optional_Durative_Movement_PDDL_+/** → `codes/Optional_Durative_Movement+/domain.pddl` is a **bonus** (travel takes time). 
+> **PDDL+ (Q2)** → `codes/PDDL_+/domain.pddl` with `problem-Q2-easy.pddl`, `problem-Q2-tight.pddl`, `problem-Q2-fastzone.pddl`, `problem-Q2-infeasible.pddl`. <br>
+> **Bonus** → `codes/Optional_Durative_Movement/` is a **bonus** (travel takes time).
 
 Author : Hani Bouhraoua &nbsp;|&nbsp; ID : 8314923
 
@@ -56,8 +56,8 @@ decreases battery, marks `visited`) and **`recharge`** (instantaneous
 
 | Problem | Battery | Result |
 |---------|---------|--------|
-| `problem-A.pddl` | 50 | 3 moves, **no recharge** — optional |
-| `problem-B.pddl` | 25 | 3 moves **+ 1 recharge** — forced, else stranded at C |
+| `problem-optional.pddl`  | 50 | 3 moves, **no recharge** — optional |
+| `problem-necessary.pddl` | 25 | 3 moves **+ 1 recharge** — forced, else stranded at C |
 
 The only difference is initial battery (50 vs 25): same domain, different
 behaviour → **energy genuinely influences planning**.
@@ -85,10 +85,10 @@ Four cases, varying only `time-of-day`, show timing drives feasibility:
 
 | File | Battery | time-of-day | Outcome |
 |------|---------|-------------|---------|
-| `problem-Q2-easy.pddl`          | 60 | 0  | 3 moves, no charging |
-| `problem-Q2-tight.pddl`         | 20 | 0  | valid 47-tick plan (charges both zones), not time-optimal |
-| `problem-Q2-fastzone-only.pddl` | 20 | 79 | only 21 ticks left → forced **optimal** 20-tick plan |
-| `problem-Q2-infeasible.pddl`    | 20 | 85 | only 15 ticks left → **unsolvable** (nightfall blocks goal) |
+| `problem-Q2-easy.pddl`       | 60 | 0  | 3 moves, no charging |
+| `problem-Q2-tight.pddl`      | 20 | 0  | valid 47-tick plan (charges both zones), not time-optimal |
+| `problem-Q2-fastzone.pddl`   | 20 | 79 | only 21 ticks left → forced **optimal** 20-tick plan |
+| `problem-Q2-infeasible.pddl` | 20 | 85 | only 15 ticks left → **unsolvable** (nightfall blocks goal) |
 
 ---
 
@@ -103,20 +103,31 @@ feasibility boundary earlier (e.g. tight 47→65 ticks, infeasible boundary
 
 ---
 
-## How to run (ENHSP, Windows PowerShell)
+## How to run (ENHSP)
 
-```powershell
+Path to the planner jar shown as `~/ENHSP-Public/enhsp.jar`
+(adjust if yours is elsewhere).
+
+```bash
 # Q1
-java -jar <path>\ENHSP-Public\enhsp.jar -o codes\Basic_PDDL\domain.pddl -f codes\Basic_PDDL\problem-A.pddl -planner sat-hadd
-java -jar <path>\ENHSP-Public\enhsp.jar -o codes\Basic_PDDL\domain.pddl -f codes\Basic_PDDL\problem-B.pddl -planner sat-hadd
+java -jar ~/ENHSP-Public/enhsp.jar -o codes/Basic_PDDL/domain.pddl -f codes/Basic_PDDL/problem-optional.pddl  -planner sat-hadd
+java -jar ~/ENHSP-Public/enhsp.jar -o codes/Basic_PDDL/domain.pddl -f codes/Basic_PDDL/problem-necessary.pddl -planner sat-hadd
 
 # Q2
-java -jar <path>\ENHSP-Public\enhsp.jar -o codes\PDDL_+\domain.pddl -f codes\PDDL_+\problem-Q2-easy.pddl          -planner sat-hadd
-java -jar <path>\ENHSP-Public\enhsp.jar -o codes\PDDL_+\domain.pddl -f codes\PDDL_+\problem-Q2-tight.pddl         -planner sat-hadd
-java -jar <path>\ENHSP-Public\enhsp.jar -o codes\PDDL_+\domain.pddl -f codes\PDDL_+\problem-Q2-fastzone-only.pddl -planner sat-hadd
-java -jar <path>\ENHSP-Public\enhsp.jar -o codes\PDDL_+\domain.pddl -f codes\PDDL_+\problem-Q2-infeasible.pddl    -planner sat-hadd -timeout 60
+java -jar ~/ENHSP-Public/enhsp.jar -o codes/PDDL_+/domain.pddl -f codes/PDDL_+/problem-Q2-easy.pddl       -planner sat-hadd
+java -jar ~/ENHSP-Public/enhsp.jar -o codes/PDDL_+/domain.pddl -f codes/PDDL_+/problem-Q2-tight.pddl      -planner sat-hadd
+java -jar ~/ENHSP-Public/enhsp.jar -o codes/PDDL_+/domain.pddl -f codes/PDDL_+/problem-Q2-fastzone.pddl   -planner sat-hadd
+java -jar ~/ENHSP-Public/enhsp.jar -o codes/PDDL_+/domain.pddl -f codes/PDDL_+/problem-Q2-infeasible.pddl -planner sat-hadd -timeout 60
+
+# Bonus (durative movement)
+java -jar ~/ENHSP-Public/enhsp.jar -o codes/Optional_Durative_Movement_PDDL_+/domain.pddl -f codes/Optional_Durative_Movement_PDDL_+/problem-dur-easy.pddl       -planner sat-hadd
+java -jar ~/ENHSP-Public/enhsp.jar -o codes/Optional_Durative_Movement_PDDL_+/domain.pddl -f codes/Optional_Durative_Movement_PDDL_+/problem-dur-tight.pddl      -planner sat-hadd
+java -jar ~/ENHSP-Public/enhsp.jar -o codes/Optional_Durative_Movement_PDDL_+/domain.pddl -f codes/Optional_Durative_Movement_PDDL_+/problem-dur-fastzone.pddl   -planner sat-hadd
+java -jar ~/ENHSP-Public/enhsp.jar -o codes/Optional_Durative_Movement_PDDL_+/domain.pddl -f codes/Optional_Durative_Movement_PDDL_+/problem-dur-infeasible.pddl -planner sat-hadd -timeout 60
 ```
 
+To save a run into a file, append `> codes/outputs/NAME.txt 2>&1`
+(create the folder first with `mkdir -p codes/outputs`).
 Recorded outputs for every problem are in `codes/outputs/`.
 
 ---
