@@ -33,14 +33,12 @@ generation"* and *"efficiency varies by location"*.
 
 ## Map (directional, used by both Q1 and Q2)
 
-```
-        A ──────► B
-        │         │
-        ▼         ▼
-        D ◄────── C
-        ▲
-        └── (B ──► D shortcut, energy-expensive, decoy)
-```
+    A ──────► B
+    │         │
+    ▼         ▼
+    D ◄────── C
+    ▲
+    └── (B ──► D shortcut, energy-expensive, decoy)
 
 `A→B, B→C, C→D` cost 10 each (scenic route, total 30); `A→D` costs 15
 (skips B,C); `B→D` costs 20 (decoy, skips C). Solar zones: B and C. Goal:
@@ -54,13 +52,37 @@ Two actions: **`move`** (precondition `(>= battery-level move-cost)`,
 decreases battery, marks `visited`) and **`recharge`** (instantaneous
 `(increase battery-level charge-rate)` at a solar zone).
 
-| Problem | Battery | Result |
-|---------|---------|--------|
-| `problem-optional.pddl`  | 50 | 3 moves, **no recharge** — optional |
-| `problem-necessary.pddl` | 25 | 3 moves **+ 1 recharge** — forced, else stranded at C |
+| Problem | Battery | Result | Plan Metric |
+|---------|---------|--------|-------------|
+| `problem-optional.pddl`  | 50 | 3 moves, **no recharge** — optional | Length: 3.0 |
+| `problem-necessary.pddl` | 25 | 3 moves **+ 1 recharge** — forced, else stranded at C | Length: 4.0 |
 
 The only difference is initial battery (50 vs 25): same domain, different
 behaviour → **energy genuinely influences planning**.
+
+<details>
+<summary><b>View Planner Outputs (Q1)</b></summary>
+
+**`problem-optional.pddl`**
+    Found Plan:
+    0.0: (move rover1 locA locB)
+    1.0: (move rover1 locB locC)
+    2.0: (move rover1 locC locD)
+    
+    Plan-Length:3
+    Metric (Search):3.0
+
+**`problem-necessary.pddl`**
+    Found Plan:
+    0.0: (move rover1 locA locB)
+    1.0: (move rover1 locB locC)
+    2.0: (recharge rover1 locC)
+    3.0: (move rover1 locC locD)
+    
+    Plan-Length:4
+    Metric (Search):4.0
+
+</details>
 
 ---
 
@@ -83,12 +105,54 @@ nightfall.
 
 Four cases, varying only `time-of-day`, show timing drives feasibility:
 
-| File | Battery | time-of-day | Outcome |
-|------|---------|-------------|---------|
-| `problem-Q2-easy.pddl`       | 60 | 0  | 3 moves, no charging |
-| `problem-Q2-tight.pddl`      | 20 | 0  | valid 47-tick plan (charges both zones), not time-optimal |
-| `problem-Q2-fastzone.pddl`   | 20 | 79 | only 21 ticks left → forced **optimal** 20-tick plan |
-| `problem-Q2-infeasible.pddl` | 20 | 85 | only 15 ticks left → **unsolvable** (nightfall blocks goal) |
+| File | Battery | time-of-day | Outcome | Elapsed Time |
+|------|---------|-------------|---------|--------------|
+| `problem-Q2-easy.pddl`       | 60 | 0  | 3 moves, no charging | 0 |
+| `problem-Q2-tight.pddl`      | 20 | 0  | valid 47-tick plan (charges both zones), not time-optimal | 47.0 |
+| `problem-Q2-fastzone.pddl`   | 20 | 79 | only 21 ticks left → forced **optimal** 20-tick plan | 20.0 |
+| `problem-Q2-infeasible.pddl` | 20 | 85 | only 15 ticks left → **unsolvable** (nightfall blocks goal) | N/A (Metric: -1.0) |
+
+<details>
+<summary><b>View Planner Outputs (Q2)</b></summary>
+
+**`problem-Q2-easy.pddl`**
+    Found Plan:
+    0: (move rover1 locA locB)
+    0: (move rover1 locB locC)
+    0: (move rover1 locC locD)
+    
+    Plan-Length:3
+    Elapsed Time: 0
+    Metric (Search):3.0
+
+**`problem-Q2-tight.pddl`**
+    Found Plan:
+    0: (move rover1 locA locB)
+    0: -----waiting---- [45.0]
+    45.0: (move rover1 locB locC)
+    45.0: -----waiting---- [47.0]
+    47.0: (move rover1 locC locD)
+    
+    Plan-Length:50
+    Elapsed Time: 47.0
+    Metric (Search):50.0
+
+**`problem-Q2-fastzone.pddl`**
+    Found Plan:
+    0: (move rover1 locA locB)
+    0: (move rover1 locB locC)
+    0: -----waiting---- [20.0]
+    20.0: (move rover1 locC locD)
+    
+    Plan-Length:23
+    Elapsed Time: 20.0
+    Metric (Search):23.0
+
+**`problem-Q2-infeasible.pddl`**
+    Problem unsolvable
+    Metric (Search):-1.0
+
+</details>
 
 ---
 
@@ -108,23 +172,21 @@ feasibility boundary earlier (e.g. tight 47→65 ticks, infeasible boundary
 Path to the planner jar shown as `~/ENHSP-Public/enhsp.jar`
 (adjust if yours is elsewhere).
 
-```bash
-# Q1
-java -jar ~/ENHSP-Public/enhsp.jar -o codes/Basic_PDDL/domain.pddl -f codes/Basic_PDDL/problem-optional.pddl  -planner sat-hadd
-java -jar ~/ENHSP-Public/enhsp.jar -o codes/Basic_PDDL/domain.pddl -f codes/Basic_PDDL/problem-necessary.pddl -planner sat-hadd
-
-# Q2
-java -jar ~/ENHSP-Public/enhsp.jar -o codes/PDDL_+/domain.pddl -f codes/PDDL_+/problem-Q2-easy.pddl       -planner sat-hadd
-java -jar ~/ENHSP-Public/enhsp.jar -o codes/PDDL_+/domain.pddl -f codes/PDDL_+/problem-Q2-tight.pddl      -planner sat-hadd
-java -jar ~/ENHSP-Public/enhsp.jar -o codes/PDDL_+/domain.pddl -f codes/PDDL_+/problem-Q2-fastzone.pddl   -planner sat-hadd
-java -jar ~/ENHSP-Public/enhsp.jar -o codes/PDDL_+/domain.pddl -f codes/PDDL_+/problem-Q2-infeasible.pddl -planner sat-hadd -timeout 60
-
-# Bonus (durative movement)
-java -jar ~/ENHSP-Public/enhsp.jar -o codes/Optional_Durative_Movement_PDDL_+/domain.pddl -f codes/Optional_Durative_Movement_PDDL_+/problem-dur-easy.pddl       -planner sat-hadd
-java -jar ~/ENHSP-Public/enhsp.jar -o codes/Optional_Durative_Movement_PDDL_+/domain.pddl -f codes/Optional_Durative_Movement_PDDL_+/problem-dur-tight.pddl      -planner sat-hadd
-java -jar ~/ENHSP-Public/enhsp.jar -o codes/Optional_Durative_Movement_PDDL_+/domain.pddl -f codes/Optional_Durative_Movement_PDDL_+/problem-dur-fastzone.pddl   -planner sat-hadd
-java -jar ~/ENHSP-Public/enhsp.jar -o codes/Optional_Durative_Movement_PDDL_+/domain.pddl -f codes/Optional_Durative_Movement_PDDL_+/problem-dur-infeasible.pddl -planner sat-hadd -timeout 60
-```
+    # Q1
+    java -jar ~/ENHSP-Public/enhsp.jar -o codes/Basic_PDDL/domain.pddl -f codes/Basic_PDDL/problem-optional.pddl  -planner sat-hadd
+    java -jar ~/ENHSP-Public/enhsp.jar -o codes/Basic_PDDL/domain.pddl -f codes/Basic_PDDL/problem-necessary.pddl -planner sat-hadd
+    
+    # Q2
+    java -jar ~/ENHSP-Public/enhsp.jar -o codes/PDDL_+/domain.pddl -f codes/PDDL_+/problem-Q2-easy.pddl       -planner sat-hadd
+    java -jar ~/ENHSP-Public/enhsp.jar -o codes/PDDL_+/domain.pddl -f codes/PDDL_+/problem-Q2-tight.pddl      -planner sat-hadd
+    java -jar ~/ENHSP-Public/enhsp.jar -o codes/PDDL_+/domain.pddl -f codes/PDDL_+/problem-Q2-fastzone.pddl   -planner sat-hadd
+    java -jar ~/ENHSP-Public/enhsp.jar -o codes/PDDL_+/domain.pddl -f codes/PDDL_+/problem-Q2-infeasible.pddl -planner sat-hadd -timeout 60
+    
+    # Bonus (durative movement)
+    java -jar ~/ENHSP-Public/enhsp.jar -o codes/Optional_Durative_Movement_PDDL_+/domain.pddl -f codes/Optional_Durative_Movement_PDDL_+/problem-dur-easy.pddl       -planner sat-hadd
+    java -jar ~/ENHSP-Public/enhsp.jar -o codes/Optional_Durative_Movement_PDDL_+/domain.pddl -f codes/Optional_Durative_Movement_PDDL_+/problem-dur-tight.pddl      -planner sat-hadd
+    java -jar ~/ENHSP-Public/enhsp.jar -o codes/Optional_Durative_Movement_PDDL_+/domain.pddl -f codes/Optional_Durative_Movement_PDDL_+/problem-dur-fastzone.pddl   -planner sat-hadd
+    java -jar ~/ENHSP-Public/enhsp.jar -o codes/Optional_Durative_Movement_PDDL_+/domain.pddl -f codes/Optional_Durative_Movement_PDDL_+/problem-dur-infeasible.pddl -planner sat-hadd -timeout 60
 
 To save a run into a file, append `> codes/outputs/NAME.txt 2>&1`
 (create the folder first with `mkdir -p codes/outputs`).
@@ -146,14 +208,14 @@ Recorded outputs for every problem are in `codes/outputs/`.
 
 ## Repository layout
 
-```
-.
-├── README.md
-├── Report/   report.pdf            (1-page summary)
-├── slide/    Rover_Presentation.pptx
-└── codes/
-    ├── Basic_PDDL/                 Q1
-    ├── PDDL_+/                     Q2
-    ├── Optional_Durative_Movement/ bonus
-    └── outputs/                    recorded planner outputs
-```
+    .
+    ├── README.md
+    ├── Report/   
+    ├──     report.pdf            
+    ├── slide/    
+    ├──     Rover_Presentation.pptx
+    └── codes/
+        ├── Basic_PDDL/                 Q1
+        ├── PDDL_+/                     Q2
+        ├── Optional_Durative_Movement/ bonus
+        └── outputs/                    recorded planner outputs
