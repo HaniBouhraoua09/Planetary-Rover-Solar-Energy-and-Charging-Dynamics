@@ -10,7 +10,7 @@ Author : Hani Bouhraoua &nbsp;|&nbsp; ID : 8314923
 # Planetary Rover — Solar Energy and Charging Dynamics (PDDL / PDDL+)
 
 > Assignment **D1-V7** — *Artificial Intelligence for Robotics 2 (AI4Ro2)*
-> A solar-powered rover explores a graph of locations while managing battery
+> A solar-powered rover explores a graph of locations while managing battery 
 > consumption and solar recharging.
 > **Planner:** ENHSP, run with `-planner sat-hadd`.
 
